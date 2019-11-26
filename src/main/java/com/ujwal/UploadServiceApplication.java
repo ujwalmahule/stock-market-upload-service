@@ -1,33 +1,60 @@
 package com.ujwal;
 
+import java.io.IOException;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.ujwal.exception.ResourceNotFoundException;
+import com.ujwal.model.FileRecord;
+import com.ujwal.model.UploadStatus;
+import com.ujwal.repository.FileRecordRepository;
+import com.ujwal.service.StockDataService;
+
 @EnableDiscoveryClient
 @RestController
 @SpringBootApplication(exclude = {SecurityAutoConfiguration.class })
 public class UploadServiceApplication {
 
+	@Autowired
+	StockDataService service;
+	
+	@Autowired
+	FileRecordRepository repository;
+	
 	public static void main(String[] args) {
 		SpringApplication.run(UploadServiceApplication.class, args);
 	}
 
 	@PostMapping("/")
-    public String handleFileUpload(@RequestParam("file") MultipartFile file,
+    public UploadStatus handleFileUpload(@RequestParam("file") MultipartFile file,
             RedirectAttributes redirectAttributes) {
 
-        //storageService.store(file);
-		System.out.println(file.getSize());
-        redirectAttributes.addFlashAttribute("message",
-                "You successfully uploaded " + file.getOriginalFilename() + "!");
+		FileRecord record = null;
+		UploadStatus status = new UploadStatus(true, "File uploaded successfully");
+		try {
+			record = service.saveFile(file);
+			status.setRecordId(record.getId());
+		} catch (IOException e) {
+			status.setSuccess(false);
+			status.setMessage("Failed to upload file, please check if the file is valid");
+		}
 
-        return "{'fileName':'" + file.getName() + "'}";
+        return status;
     }
+	
+	@GetMapping("/{id}")
+	public FileRecord getUploadStatus(@PathVariable(value = "id") long id) {
+		return repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("FileRecord", "id", id));
+	}
 }
