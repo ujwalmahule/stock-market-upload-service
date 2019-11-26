@@ -29,6 +29,7 @@ public class StockDataServiceImpl implements StockDataService {
 	public FileRecord saveFile(MultipartFile file) throws IOException {
 		FileRecord record = new FileRecord();
 		record.setFileName(file.getName());
+		record.setState(0);
 		Session session = entityManager.unwrap(Session.class);
 		Blob blob = Hibernate.getLobCreator(session).createBlob(file.getBytes());
 		record.setFileData(blob);

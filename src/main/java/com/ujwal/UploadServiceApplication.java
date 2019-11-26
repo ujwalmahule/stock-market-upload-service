@@ -52,9 +52,4 @@ public class UploadServiceApplication {
 
         return status;
     }
-	
-	@GetMapping("/{id}")
-	public FileRecord getUploadStatus(@PathVariable(value = "id") long id) {
-		return repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("FileRecord", "id", id));
-	}
 }
